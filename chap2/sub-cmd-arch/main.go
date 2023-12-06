@@ -2,13 +2,13 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/sbjeong0/sub-cmd-arch/cmd"
 	"io"
 	"os"
 )
 
-var errInvalidSubCommand = errors.New("invalid sub-command specified")
+var errInvalidSubCommand = errors.New("Invalid sub-command specified")
 
 func main() {
 	err := handleCommand(os.Stdout, os.Args[1:])
@@ -19,15 +19,14 @@ func main() {
 
 func handleCommand(w io.Writer, args []string) error {
 	var err error
-	if len(os.Args) < 2 {
-		printUsage(os.Stdout)
-		os.Exit(1)
+	if len(os.Args) < 1 {
+		err = errInvalidSubCommand
 	}
 	switch os.Args[1] {
-	case "cmd-a":
-		err = handleCmdA(os.Stdout, os.Args[2:])
-	case "cmd-b":
-		err = handleCmdB(os.Stdout, os.Args[2:])
+	case "http":
+		err = cmd.HandleHttp(os.Stdout, os.Args[2:])
+	case "grpc":
+		err = cmd.HandleGrpc(os.Stdout, os.Args[2:])
 	case "-h":
 		printUsage(os.Stdout)
 	case "--help":
@@ -36,39 +35,15 @@ func handleCommand(w io.Writer, args []string) error {
 		err = errInvalidSubCommand
 	}
 
-	if err != nil {
-		fmt.Print(err)
+	if errors.Is(err, cmd.ErrNoServerSpecified) || errors.Is(err, errInvalidSubCommand) {
+		fmt.Fprintln(w, err)
+		printUsage(w)
 	}
-}
-
-func handleCmdA(w io.Writer, args []string) error {
-	var v string
-	fs := flag.NewFlagSet("cmd-a", flag.ContinueOnError)
-	fs.SetOutput(w)
-	fs.StringVar(&v, "verb", "argument-value", "Argument 1")
-	err := fs.Parse(args)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(w, "Executing command A")
-	return nil
-}
-
-func handleCmdB(w io.Writer, args []string) error {
-	var v string
-	fs := flag.NewFlagSet("cmd-b", flag.ContinueOnError)
-	fs.SetOutput(w)
-	fs.StringVar(&v, "verb", "argument-value", "Argument 1")
-	err := fs.Parse(args)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(w, "Executing command B")
 	return nil
 }
 
 func printUsage(w io.Writer) {
-	fmt.Fprintf(w, "Usage: %s [cmd-a|cmd-b] -h\n\n", os.Args[0])
-	handleCmdA(w, []string{"-h"})
-	handleCmdB(w, []string{"-h"})
+	fmt.Fprintf(w, "Usage: [http|grpc] -h\n")
+	cmd.HandleGrpc(w, []string{"-h"})
+	cmd.HandleHttp(w, []string{"-h"})
 }
