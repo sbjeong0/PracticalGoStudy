@@ -7,7 +7,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"time"
 )
 
 type pkgData struct {
@@ -72,10 +71,4 @@ func registerPackageData(url string, data pkgData) (pkgRegisterResult, error) {
 	}
 	err = json.Unmarshal(respData, &p)
 	return p, err
-}
-
-func createHttpClientWithTimeout(d time.Duration) *http.Client {
-	return &http.Client{
-		Timeout: d,
-	}
 }
